@@ -41,20 +41,20 @@ namespace SampleService
 		}
 
 
+		public Task<IEnumerable<int>> KnownCollectionInterfaceShouldWorkV21(int[] values)
+		{
+			IEnumerable<int> l = values.ToList();
+
+			return Task.FromResult(l);
+		}
+
+
 		public Task<List<int>> SpecificCollectionTypeShouldWorkV1V2Async(int[] values)
 		{
 			List<int> l = values.ToList();
 
 			return Task.FromResult(l);
 		}
-
-
-		public Task<IEnumerable<int>> KnownCollectionInterfaceShouldWorkV21(int[] values)
-		{
-			IEnumerable<int> l = values.ToList();
-
-			return Task.FromResult(l);
-        }
 
 
 		/// <summary>
@@ -105,18 +105,21 @@ namespace SampleService
 					int wrappedValue = await sampleService.GenericStructShouldWorkV1V2Async(100);
 					Console.WriteLine($"GenericType works: '{wrappedValue}'.");
 
+					// commented out as V2 cannot generate data contract if there are two methods with different
+					// types that resolve to same contract name
 					//List<int> collectionValue = await sampleService.SpecificCollectionTypeShouldWorkV1V2Async(new[] { 1, 2, 3 });
 					//Console.WriteLine($"CollectionType works: '{string.Join(", ", collectionValue)}'.");
 
-					IEnumerable<int> enumerableValue = await sampleService.KnownCollectionInterfaceShouldWorkV21(new[] { 1, 2, 3 });
+					IEnumerable<int> enumerableValue =
+						await sampleService.KnownCollectionInterfaceShouldWorkV21(new[] {1, 2, 3});
 					Console.WriteLine($"CollectionInterface works: '{string.Join(", ", enumerableValue)}'.");
-                }
+				}
 				catch (Exception ex)
 				{
 					Console.Error.WriteLine($"Caught exception: {ex}");
 				}
 
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+				await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
 			}
 		}
 	}
