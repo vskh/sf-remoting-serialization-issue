@@ -12,6 +12,7 @@ using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Client;
 using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.V2.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
+using SampleService.Sfrv21fix;
 
 namespace SampleService
 {
@@ -65,10 +66,14 @@ namespace SampleService
 			yield return new ServiceInstanceListener(context =>
 				new FabricTransportServiceRemotingListener(
 					context,
-					new ServiceRemotingMessageDispatcher(new[] {typeof(ISampleService)}, context, this),
+					new ServiceRemotingMessageDispatcher(
+						new[] {typeof(ISampleService)},
+						context, 
+						this,
+						new WrappedRequestMessageFactory()),
 					new FabricTransportRemotingListenerSettings
 					{
-						//UseWrappedMessage = true
+						UseWrappedMessage = true
 					}));
 		}
 
@@ -82,7 +87,7 @@ namespace SampleService
 			ServiceProxyFactory factory = new ServiceProxyFactory(handler =>
 				new FabricTransportServiceRemotingClientFactory(new FabricTransportRemotingSettings
 				{
-					//UseWrappedMessage = true
+					UseWrappedMessage = true
 				}));
 
 			ISampleService sampleService = factory.CreateNonIServiceProxy<ISampleService>(
