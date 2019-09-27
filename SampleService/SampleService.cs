@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Fabric;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
@@ -25,10 +26,34 @@ namespace SampleService
 		}
 
 
-		public Task<int> GetIntAsync(int max)
+		public Task<int> SimpleTypeShouldWorkV1V2Async(int value)
 		{
-			return Task.FromResult(m_random.Next(max));
+			return Task.FromResult(value);
 		}
+
+
+		public Task<Wrapper<int>> GenericStructShouldWorkV1V2Async(int value)
+		{
+			Wrapper<int> w = value;
+
+			return Task.FromResult(w);
+		}
+
+
+		public Task<List<int>> SpecificCollectionTypeShouldWorkV1V2Async(int[] values)
+		{
+			List<int> l = values.ToList();
+
+			return Task.FromResult(l);
+		}
+
+
+		public Task<IEnumerable<int>> KnownCollectionInterfaceShouldWorkV21(int[] values)
+		{
+			IEnumerable<int> l = values.ToList();
+
+			return Task.FromResult(l);
+        }
 
 
 		/// <summary>
@@ -43,7 +68,7 @@ namespace SampleService
 					new ServiceRemotingMessageDispatcher(new[] {typeof(ISampleService)}, context, this),
 					new FabricTransportRemotingListenerSettings
 					{
-						UseWrappedMessage = true
+						//UseWrappedMessage = true
 					}));
 		}
 
@@ -57,38 +82,37 @@ namespace SampleService
 			ServiceProxyFactory factory = new ServiceProxyFactory(handler =>
 				new FabricTransportServiceRemotingClientFactory(new FabricTransportRemotingSettings
 				{
-					UseWrappedMessage = true
+					//UseWrappedMessage = true
 				}));
 
 			ISampleService sampleService = factory.CreateNonIServiceProxy<ISampleService>(
 				new Uri("fabric:/SFRemotingSerializationIssue/SampleService"));
 
-			try
-			{
-				int value = await sampleService.GetIntAsync(100);
-				Console.WriteLine($"Sample service returned '{value}'.");
-			}
-			catch (Exception ex)
-			{
-				Console.Error.WriteLine($"Caught exception: {ex}");
-			}
-
-			// TODO: Replace the following sample code with your own logic 
-			//       or remove this RunAsync override if it's not needed in your service.
-
-			long iterations = 0;
-
 			while (true)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
-				ServiceEventSource.Current.ServiceMessage(Context, "Working-{0}", ++iterations);
+				try
+				{
+					int simpleValue = await sampleService.SimpleTypeShouldWorkV1V2Async(100);
+					Console.WriteLine($"SimpleType works: '{simpleValue}'.");
 
-				await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+					int wrappedValue = await sampleService.GenericStructShouldWorkV1V2Async(100);
+					Console.WriteLine($"GenericType works: '{wrappedValue}'.");
+
+					//List<int> collectionValue = await sampleService.SpecificCollectionTypeShouldWorkV1V2Async(new[] { 1, 2, 3 });
+					//Console.WriteLine($"CollectionType works: '{string.Join(", ", collectionValue)}'.");
+
+					IEnumerable<int> enumerableValue = await sampleService.KnownCollectionInterfaceShouldWorkV21(new[] { 1, 2, 3 });
+					Console.WriteLine($"CollectionInterface works: '{string.Join(", ", enumerableValue)}'.");
+                }
+				catch (Exception ex)
+				{
+					Console.Error.WriteLine($"Caught exception: {ex}");
+				}
+
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
 			}
 		}
-
-
-		private readonly Random m_random = new Random();
 	}
 }
