@@ -68,7 +68,7 @@ namespace SampleService
 					new ServiceRemotingMessageDispatcher(new[] {typeof(ISampleService)}, context, this),
 					new FabricTransportRemotingListenerSettings
 					{
-						//UseWrappedMessage = true
+						UseWrappedMessage = true
 					}));
 		}
 
@@ -82,7 +82,7 @@ namespace SampleService
 			ServiceProxyFactory factory = new ServiceProxyFactory(handler =>
 				new FabricTransportServiceRemotingClientFactory(new FabricTransportRemotingSettings
 				{
-					//UseWrappedMessage = true
+					UseWrappedMessage = true
 				}));
 
 			ISampleService sampleService = factory.CreateNonIServiceProxy<ISampleService>(
@@ -100,6 +100,8 @@ namespace SampleService
 					int wrappedValue = await sampleService.GenericStructShouldWorkV1V2Async(100);
 					Console.WriteLine($"GenericType works: '{wrappedValue}'.");
 
+					// commented out as V2 cannot generate data contract if there are two methods with different
+					// types that resolve to same contract name
 					//List<int> collectionValue = await sampleService.SpecificCollectionTypeShouldWorkV1V2Async(new[] { 1, 2, 3 });
 					//Console.WriteLine($"CollectionType works: '{string.Join(", ", collectionValue)}'.");
 
